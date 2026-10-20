@@ -13,6 +13,9 @@ const crypto = require('node:crypto');
 
 const API_BASE = 'https://api.elevenlabs.io/v1';
 
+// Wie lange der Datenpunkt "newFile" auf true bleibt (Impuls), in Millisekunden
+const SIGNAL_PULSE_MS = 1000;
+
 class ElevenlabsTts extends utils.Adapter {
     /**
      * @param {Partial<utils.AdapterOptions>} [options]
@@ -23,10 +26,12 @@ class ElevenlabsTts extends utils.Adapter {
             name: 'elevenlabs-tts',
         });
 
-        /** @type {Array<{text: string, source: string}>} */
+        /** @type {Array<{text: string, source: string, ack: boolean, rawVal: any}>} */
         this.queue = [];
         this.busy = false;
         this.unloaded = false;
+        /** @type {any} */
+        this.pulseTimer = null;
 
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
@@ -36,6 +41,7 @@ class ElevenlabsTts extends utils.Adapter {
     async onReady() {
         await this.setStateAsync('info.connection', false, true);
         await this.setStateAsync('processing', false, true);
+        await this.setStateAsync('newFile', false, true);
 
         const cfg = this.config;
 
@@ -119,7 +125,13 @@ class ElevenlabsTts extends utils.Adapter {
             return;
         }
 
-        // Eigene Schreibvorgaenge (ack=true) auf "speak" ignorieren
+        // Eigene Schreibvorgaenge (z.B. das Bestaetigen mit ack=true) ignorieren,
+        // sonst wuerde die Bestaetigung eine neue Konvertierung ausloesen
+        if (state.from === `system.adapter.${this.namespace}`) {
+            return;
+        }
+
+        // Bestaetigte Werte auf "speak" ignorieren
         if (isOwnSpeak && state.ack) {
             return;
         }
@@ -133,20 +145,21 @@ class ElevenlabsTts extends utils.Adapter {
             return;
         }
 
-        this.enqueue(text, id);
+        this.enqueue(text, id, state);
     }
 
     /**
      * @param {string} text
      * @param {string} source
+     * @param {ioBroker.State} state
      */
-    enqueue(text, source) {
+    enqueue(text, source, state) {
         const max = Number(this.config.maxTextLength) || 5000;
         if (text.length > max) {
             this.log.warn(`Text von ${source} hat ${text.length} Zeichen, gekuerzt auf ${max}.`);
             text = text.slice(0, max);
         }
-        this.queue.push({ text, source });
+        this.queue.push({ text, source, ack: !!state.ack, rawVal: state.val });
         this.log.debug(`Text in Warteschlange (${this.queue.length}): ${text.slice(0, 60)}`);
         void this.processQueue();
     }
@@ -162,10 +175,14 @@ class ElevenlabsTts extends utils.Adapter {
                 await this.setStateAsync('processing', true, true);
                 try {
                     const file = await this.synthesize(job.text);
-                    await this.setStateAsync('lastFile', file, true);
                     await this.setStateAsync('lastText', job.text, true);
                     await this.setStateAsync('lastError', '', true);
                     this.log.info(`MP3 gespeichert: ${file}`);
+
+                    // Anderen Adaptern/Skripten melden: neue MP3 ist fertig
+                    await this.signalNewFile(file);
+                    // Quell-Datenpunkt bestaetigen (ack=true)
+                    await this.acknowledgeSource(job);
                 } catch (err) {
                     this.log.error(`Konvertierung fehlgeschlagen: ${err.message}`);
                     await this.setStateAsync('lastError', err.message, true);
@@ -176,6 +193,56 @@ class ElevenlabsTts extends utils.Adapter {
             if (!this.unloaded) {
                 await this.setStateAsync('processing', false, true);
             }
+        }
+    }
+
+    /**
+     * Signalisiert eine fertige Datei: lastFile/lastFileName setzen, danach
+     * "newFile" kurz auf true (Impuls). Der Pfad steht also schon bereit,
+     * wenn ein Abonnent auf newFile reagiert.
+     * @param {string} file
+     */
+    async signalNewFile(file) {
+        await this.setStateAsync('lastFile', file, true);
+        await this.setStateAsync('lastFileName', path.basename(file), true);
+
+        if (this.pulseTimer) {
+            this.clearTimeout(this.pulseTimer);
+            this.pulseTimer = null;
+        }
+        // Erst auf false, dann auf true, damit auch bei direkt aufeinander
+        // folgenden Dateien jedes Mal eine Aenderung entsteht
+        await this.setStateAsync('newFile', false, true);
+        await this.setStateAsync('newFile', true, true);
+
+        this.pulseTimer = this.setTimeout(() => {
+            this.pulseTimer = null;
+            void this.setStateAsync('newFile', false, true);
+        }, SIGNAL_PULSE_MS);
+    }
+
+    /**
+     * Bestaetigt den ausloesenden Datenpunkt mit ack=true, sofern der Wert
+     * mit ack=false geschrieben wurde und sich inzwischen nicht geaendert hat.
+     * @param {{text: string, source: string, ack: boolean, rawVal: any}} job
+     */
+    async acknowledgeSource(job) {
+        if (job.ack) {
+            return; // war schon bestaetigt
+        }
+        try {
+            const isOwn = job.source === `${this.namespace}.speak`;
+            const current = isOwn ? await this.getStateAsync('speak') : await this.getForeignStateAsync(job.source);
+            if (!current || current.val !== job.rawVal) {
+                return; // inzwischen neuer Wert, nicht ueberschreiben
+            }
+            if (isOwn) {
+                await this.setStateAsync('speak', { val: job.rawVal, ack: true });
+            } else {
+                await this.setForeignStateAsync(job.source, { val: job.rawVal, ack: true });
+            }
+        } catch (err) {
+            this.log.warn(`Konnte ${job.source} nicht bestaetigen: ${err.message}`);
         }
     }
 

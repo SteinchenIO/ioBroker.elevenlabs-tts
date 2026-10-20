@@ -38,7 +38,7 @@
     "loglevel": "info",
     "mode": "daemon",
     "type": "multimedia",
-    "compact": true,
+    "compact": false,
     "connectionType": "cloud",
     "dataSource": "push",
     "adminUI": {
@@ -118,11 +118,37 @@
       "native": {}
     },
     {
+      "_id": "newFile",
+      "type": "state",
+      "common": {
+        "role": "indicator",
+        "name": "New MP3 file available (pulse, true for 1 second)",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    },
+    {
       "_id": "lastFile",
       "type": "state",
       "common": {
         "role": "text",
         "name": "Full path of the last generated MP3 file",
+        "type": "string",
+        "read": true,
+        "write": false,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "lastFileName",
+      "type": "state",
+      "common": {
+        "role": "text",
+        "name": "File name of the last generated MP3 file",
         "type": "string",
         "read": true,
         "write": false,
