@@ -1,0 +1,41 @@
+{
+  "name": "iobroker.elevenlabs-tts",
+  "version": "0.1.0",
+  "description": "Liest einen Text aus einem Datenpunkt, erzeugt per ElevenLabs Text-to-Speech eine MP3-Datei und speichert sie ab.",
+  "author": {
+    "name": "SteinchenIO",
+    "email": "git@felz.de"
+  },
+  "homepage": "https://github.com/SteinchenIO/ioBroker.elevenlabs-tts",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "elevenlabs",
+    "tts",
+    "text-to-speech",
+    "mp3"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SteinchenIO/ioBroker.elevenlabs-tts.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@iobroker/adapter-core": "^3.2.3"
+  },
+  "main": "main.js",
+  "files": [
+    "admin/",
+    "io-package.json",
+    "main.js",
+    "LICENSE"
+  ],
+  "scripts": {
+    "check": "node --check main.js"
+  },
+  "bugs": {
+    "url": "https://github.com/SteinchenIO/ioBroker.elevenlabs-tts/issues"
+  }
+}

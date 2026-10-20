@@ -1,0 +1,159 @@
+{
+  "type": "tabs",
+  "i18n": false,
+  "items": {
+    "tabApi": {
+      "type": "panel",
+      "label": "ElevenLabs",
+      "items": {
+        "apiKey": {
+          "type": "password",
+          "label": "API-Key",
+          "help": "Zu finden unter elevenlabs.io > Developers > API Keys",
+          "repeat": false,
+          "xs": 12,
+          "sm": 12,
+          "md": 6
+        },
+        "voiceId": {
+          "type": "text",
+          "label": "Voice-ID",
+          "help": "Voice-ID aus der ElevenLabs Voice Library (Standard: Rachel)",
+          "newLine": true,
+          "xs": 12,
+          "sm": 12,
+          "md": 6
+        },
+        "modelId": {
+          "type": "select",
+          "label": "Modell",
+          "newLine": true,
+          "options": [
+            { "label": "Multilingual v2 (beste Qualitaet)", "value": "eleven_multilingual_v2" },
+            { "label": "Turbo v2.5 (schnell, guenstiger)", "value": "eleven_turbo_v2_5" },
+            { "label": "Flash v2.5 (sehr schnell)", "value": "eleven_flash_v2_5" },
+            { "label": "Eleven v3", "value": "eleven_v3" }
+          ],
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "languageCode": {
+          "type": "text",
+          "label": "Sprachcode (optional, z.B. de)",
+          "help": "Leer lassen fuer automatische Erkennung",
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "outputFormat": {
+          "type": "select",
+          "label": "Audioformat",
+          "newLine": true,
+          "options": [
+            { "label": "MP3 44.1 kHz / 128 kbit/s", "value": "mp3_44100_128" },
+            { "label": "MP3 44.1 kHz / 192 kbit/s", "value": "mp3_44100_192" },
+            { "label": "MP3 44.1 kHz / 64 kbit/s", "value": "mp3_44100_64" },
+            { "label": "MP3 22.05 kHz / 32 kbit/s", "value": "mp3_22050_32" }
+          ],
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "stability": {
+          "type": "slider",
+          "label": "Stabilitaet (%)",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "newLine": true,
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "similarityBoost": {
+          "type": "slider",
+          "label": "Aehnlichkeit (%)",
+          "min": 0,
+          "max": 100,
+          "step": 1,
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "requestTimeoutSec": {
+          "type": "number",
+          "label": "Timeout (Sekunden)",
+          "min": 5,
+          "max": 300,
+          "newLine": true,
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        }
+      }
+    },
+    "tabInput": {
+      "type": "panel",
+      "label": "Eingang / Ausgabe",
+      "items": {
+        "textStateId": {
+          "type": "objectId",
+          "label": "Datenpunkt mit Text",
+          "help": "Bei jeder Aenderung wird der Text vertont. Zusaetzlich steht <instanz>.speak zur Verfuegung.",
+          "xs": 12,
+          "sm": 12,
+          "md": 8
+        },
+        "triggerOnlyAck": {
+          "type": "checkbox",
+          "label": "Nur bestaetigte Werte (ack=true) verarbeiten",
+          "newLine": true,
+          "xs": 12,
+          "sm": 12,
+          "md": 6
+        },
+        "maxTextLength": {
+          "type": "number",
+          "label": "Maximale Textlaenge (Zeichen)",
+          "min": 1,
+          "max": 40000,
+          "newLine": true,
+          "xs": 12,
+          "sm": 6,
+          "md": 3
+        },
+        "outputPath": {
+          "type": "text",
+          "label": "Ausgabeordner",
+          "help": "Der ioBroker-Benutzer braucht Schreibrechte, der Ordner wird bei Bedarf angelegt",
+          "newLine": true,
+          "xs": 12,
+          "sm": 12,
+          "md": 8
+        },
+        "fileNameMode": {
+          "type": "select",
+          "label": "Dateiname",
+          "newLine": true,
+          "options": [
+            { "label": "Zeitstempel (jede Datei neu)", "value": "timestamp" },
+            { "label": "Fester Name (wird ueberschrieben)", "value": "fixed" },
+            { "label": "Hash des Textes (gleicher Text = gleiche Datei)", "value": "hash" }
+          ],
+          "xs": 12,
+          "sm": 6,
+          "md": 4
+        },
+        "fixedFileName": {
+          "type": "text",
+          "label": "Fester Dateiname (ohne .mp3)",
+          "hidden": "data.fileNameMode !== 'fixed'",
+          "xs": 12,
+          "sm": 6,
+          "md": 4
+        }
+      }
+    }
+  }
+}
